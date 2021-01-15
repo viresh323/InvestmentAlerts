@@ -36,19 +36,50 @@ def GetUpcomingOFS():
    result += "- - - - - - - - - - \n"
    return result
 
+
+def GetUpcomingBuyback():
+   result = "Upcoming Buyback\n"
+   result += "- - - - - - - - - - \n"
+   data = GetWebRequestData("https://www1.nseindia.com/live_market/content/live_watch/tender_offer/forthcoming.json")
+   result += GetDisplayBuyback(data)
+   result += "- - - - - - - - - - \n"
+   return result    
+
+def GetCurrentBuyback():
+   result = "Current Buyback\n"
+   result += "- - - - - - - - - - \n"
+   data = GetWebRequestData("https://www1.nseindia.com/live_market/content/live_watch/tender_offer/current.json")
+   result += GetDisplayBuyback(data)
+   result += "- - - - - - - - - - \n"
+   return result
+
+
+
 def GetUpcomingIPOs():
     data = GetWebRequestData("https://www1.nseindia.com/products/content/equities/ipos/json/rhpJson.json")
     ipoData = pd.DataFrame(data)
     text = "\n Upcoming IPOs \n - - - - - - - - - - \n"
     if ipoData.empty:
-        return "No records found\n  - - - - - - - - - - \n"
+        return "No records found\n "
     for index,item in ipoData.iterrows():
         text += item["RHP_COMPANY_NAME"]
         text += ("\nDate : %s to %s \n"%(item["RHP_START_DT"],item["RHP_END_DT"]))
-        text += "- - - - - - - - - - \n"
+        text += "           - -  \n"
     
-    
+    text += " - - - - - - - - - - \n"
     return text
+
+
+def GetDisplayBuyback(ofsData):
+    ofsData = pd.DataFrame(ofsData)
+    text = ""
+    if ofsData.empty:
+        return "No records found\n"
+    for index,item in ofsData.iterrows():
+     text += ("%s"%(item["company"]))
+     text += ("\nDate : %s to %s \n"%(item["todStartDate"],item["todEndDate"]))
+    return text
+
 
 
 def GetDisplayOFS(ofsData):
@@ -60,6 +91,8 @@ def GetDisplayOFS(ofsData):
      text += ("%s"%(item["company"]))
      text += ("\nDate : %s to %s \n"%(item["ofsStartDate"],item["ofsEndDate"]))
     return text
+
+
     
 def sendToTelegram(text):
     urlString = "https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}"
@@ -73,6 +106,9 @@ def main():
   currentOfs =(GetCurrenOFS())
   upcomingOfs = (GetUpcomingOFS())
   upcomingIpo = GetUpcomingIPOs()
-  sendToTelegram(currentOfs+upcomingOfs+upcomingIpo)
+  currentBuyback = GetCurrentBuyback()
+  upcomingBuyback = GetUpcomingBuyback()
+
+  sendToTelegram(currentOfs + upcomingOfs + upcomingIpo + currentBuyback + upcomingBuyback)
 
 main()
