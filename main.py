@@ -36,11 +36,26 @@ def GetUpcomingOFS():
    result += "- - - - - - - - - - \n"
    return result
 
+def GetUpcomingIPOs():
+    data = GetWebRequestData("https://www1.nseindia.com/products/content/equities/ipos/json/rhpJson.json")
+    ipoData = pd.DataFrame(data)
+    text = "\n Upcoming IPOs \n - - - - - - - - - - \n"
+    if ipoData.empty:
+        return "No records found\n  - - - - - - - - - - \n"
+    for index,item in ipoData.iterrows():
+        text += item["RHP_COMPANY_NAME"]
+        text += ("\nDate : %s to %s \n"%(item["RHP_START_DT"],item["RHP_END_DT"]))
+        text += "- - - - - - - - - - \n"
+    
+    
+    return text
+
+
 def GetDisplayOFS(ofsData):
     ofsData = pd.DataFrame(ofsData)
     text = ""
     if ofsData.empty:
-        return "No records found"
+        return "No records found\n"
     for index,item in ofsData.iterrows():
      text += ("%s"%(item["company"]))
      text += ("\nDate : %s to %s \n"%(item["ofsStartDate"],item["ofsEndDate"]))
@@ -57,6 +72,7 @@ def sendToTelegram(text):
 def main(): 
   currentOfs =(GetCurrenOFS())
   upcomingOfs = (GetUpcomingOFS())
-  sendToTelegram(currentOfs+upcomingOfs)
+  upcomingIpo = GetUpcomingIPOs()
+  sendToTelegram(currentOfs+upcomingOfs+upcomingIpo)
 
 main()
