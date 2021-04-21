@@ -1,6 +1,9 @@
 import json
 import requests
 import pandas as pd
+from datetime import datetime as dt
+from datetime import timedelta
+import urllib
 
 headers = {
     'Connection': 'keep-alive',
@@ -18,9 +21,19 @@ headers = {
 
 
 def GetWebRequestData(url):
-    data = requests.get(url, headers=headers).json()
+    try:
+        data = requests.get(url, headers=headers)
+        data = data.json()
+    except ValueError:
+        # Refered Upstox
+        s = requests.Session()
+        data = s.get("http://nseindia.com", headers=headers)
+        data = s.get(url, headers=headers)
+        data = data.json()
+
     if("data" not in data):
         return data
+
     return data["data"]
 
 
@@ -81,7 +94,8 @@ def GetCurrentBuyback():
 
 
 def GetCurrentIPOs():
-    data = GetWebRequestData("https://www.nseindia.com/api/ipo-current-issue")
+    data = GetWebRequestData(
+        "https://www1.nseindia.com/products/content/equities/ipos/json/rhpJson.json")
     ipoData = pd.DataFrame(data)
     text = "\n Current IPOs \n - - - - - - - - - - \n"
     if ipoData.empty:
@@ -137,13 +151,62 @@ def GetDisplayOFS(ofsData):
     return text
 
 
+def GetDisplayBoardMeetings(data):
+    result = ""
+    for i in data:
+        result += ("%s" % (i["CompanyName"]))
+        result += ("%s" % (i["Purpose"]))
+        result += ("%s" % (i["DisplayDate"]))
+
+    return result
+
+
+def GetDisplayEvents(data):
+    result = ""
+    for i in data:
+        if dt.strptime(i["date"], "%d-%b-%Y") < (dt.today() + timedelta(days=10)):
+            result += ("%s" % (i["company"]))
+            result += ("%s" % (i["purpose"]))
+            result += ("- %s \n \n" % (i["date"]))
+
+    return result
+
+
+def GetBoardMeetings():
+    result = "Board Meetings\n"
+    result += "- - - - - - - - - - \n"
+
+    data = GetWebRequestData(
+        "https://www1.nseindia.com/live_market/dynaContent/live_watch/get_quote/companySnapshot/getBoardMeetings.json")
+    resultData = data["rows"]
+    result += GetDisplayBoardMeetings(resultData)
+    result += "- - - - - - - - - - \n"
+    return result
+
+
+def GetResults():
+    result = "Results\n"
+    result += "- - - - - - - - - - \n"
+
+    data = GetWebRequestData(
+        "https://www.nseindia.com/api/event-calendar")
+
+    result += GetDisplayEvents(data)
+    result += "- - - - - - - - - - \n"
+    return result
+
+
 def sendToTelegram(text):
     urlString = "https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}"
+
     # Give api token of the bot
     apiToken = ""  # Give api token of the bot
     chatId = "-1001280951754"  # Group Id
-    urlString = urlString.format(apiToken, chatId, text)
-    response = requests.get(urlString)
+
+    text = text.replace("&", "And")
+    for i in range(0, len(text), 3800):
+        url = urlString.format(apiToken, chatId, text[i:i+3800])
+        response = requests.get(url)
 
 
 def main():
@@ -153,9 +216,14 @@ def main():
     currentIpo = GetCurrentIPOs()
     currentBuyback = GetCurrentBuyback()
     upcomingBuyback = GetUpcomingBuyback()
+    dividend = GetBoardMeetings()
+    earnings = GetResults()
 
     sendToTelegram(currentOfs + upcomingOfs + upcomingIpo +
                    currentIpo + currentBuyback + upcomingBuyback)
+
+    if dt.today().weekday() == 2:
+        sendToTelegram(dividend + earnings)
 
 
 main()
