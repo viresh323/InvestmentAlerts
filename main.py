@@ -4,6 +4,8 @@ import pandas as pd
 from datetime import datetime as dt
 from datetime import timedelta
 import urllib
+import configparser
+
 
 headers = {
     'Connection': 'keep-alive',
@@ -38,8 +40,8 @@ def GetWebRequestData(url):
 
 
 def GetCurrenOFS():
-    result = "Current Offerings\n"
-    result += "- - - - - - - - - - \n"
+
+    result = "-Current Offerings- \n"
     data = GetWebRequestData(
         "https://www1.nseindia.com/live_market/content/live_watch/offer_sale/current.json")
     ofsText = GetDisplayOFS(data)
@@ -52,8 +54,8 @@ def GetCurrenOFS():
 
 
 def GetUpcomingOFS():
-    result = "Upcoming Offerings\n"
-    result += "- - - - - - - - - - \n"
+
+    result = "-Upcoming Offerings-\n"
     data = GetWebRequestData(
         "https://www1.nseindia.com/live_market/content/live_watch/offer_sale/forthcoming.json")
     ofsText = GetDisplayOFS(data)
@@ -61,13 +63,13 @@ def GetUpcomingOFS():
         return ""
 
     result += ofsText
-    result += "- - - - - - - - - - \n"
+    result += "- - - - - - - \n"
     return result
 
 
 def GetUpcomingBuyback():
-    result = "Upcoming Buyback\n"
-    result += "- - - - - - - - - - \n"
+
+    result = "-Upcoming Buyback-\n"
     data = GetWebRequestData(
         "https://www1.nseindia.com/live_market/content/live_watch/tender_offer/forthcoming.json")
     buybackText = GetDisplayBuyback(data)
@@ -80,8 +82,8 @@ def GetUpcomingBuyback():
 
 
 def GetCurrentBuyback():
-    result = "Current Buyback\n"
-    result += "- - - - - - - - - - \n"
+
+    result = "- Current Buyback -\n"
     data = GetWebRequestData(
         "https://www1.nseindia.com/live_market/content/live_watch/tender_offer/current.json")
     buybackText = GetDisplayBuyback(data)
@@ -95,33 +97,27 @@ def GetCurrentBuyback():
 
 def GetCurrentIPOs():
     data = GetWebRequestData(
-        "https://www1.nseindia.com/products/content/equities/ipos/json/rhpJson.json")
-    ipoData = pd.DataFrame(data)
-    text = "\n Current IPOs \n - - - - - - - - - - \n"
-    if ipoData.empty:
-        return ""
-    for index, item in ipoData.iterrows():
-        text += item["companyName"]
-        text += ("\nDate : %s to %s \n" %
-                 (item["issueStartDate"], item["issueEndDate"]))
-        text += "           - -  \n"
+        "https://www.nseindia.com/api/ipo-current-issue")
 
+    text = "- CURRENT IPO -\n"
+    ipoText = GetDisplayIPO(data)
+    if(ipoText == ""):
+        return ""
+
+    text += ipoText
     text += " - - - - - - - - - - \n"
     return text
 
 
 def GetUpcomingIPOs():
+    text = "-UPCOMING IPO-\n"
     data = GetWebRequestData(
-        "https://www1.nseindia.com/products/content/equities/ipos/json/rhpJson.json")
-    ipoData = pd.DataFrame(data)
-    text = "\n Upcoming IPOs \n - - - - - - - - - - \n"
-    if ipoData.empty:
+        "https://www.nseindia.com/api/all-upcoming-issues?category=ipo")
+    ipoText = GetDisplayIPO(data)
+    if(ipoText == ""):
         return ""
-    for index, item in ipoData.iterrows():
-        text += item["RHP_COMPANY_NAME"]
-        text += ("\nDate : %s to %s \n" %
-                 (item["RHP_START_DT"], item["RHP_END_DT"]))
-        text += "           - -  \n"
+
+    text += ipoText
 
     text += " - - - - - - - - - - \n"
     return text
@@ -172,9 +168,19 @@ def GetDisplayEvents(data):
     return result
 
 
+def GetDisplayIPO(data):
+    result = ""
+    for i in data:
+        result += ("%s" % (i["companyName"]))
+        result += ("\n %s" % (i["issueStartDate"]))
+        result += ("- %s \n" % (i["issueEndDate"]))
+
+    return result
+
+
 def GetBoardMeetings():
-    result = "Board Meetings\n"
-    result += "- - - - - - - - - - \n"
+
+    result = "-Board Meetings-\n"
 
     data = GetWebRequestData(
         "https://www1.nseindia.com/live_market/dynaContent/live_watch/get_quote/companySnapshot/getBoardMeetings.json")
@@ -185,23 +191,25 @@ def GetBoardMeetings():
 
 
 def GetResults():
-    result = "Results\n"
-    result += "- - - - - - - - - - \n"
+    result = "-Results- \n"
 
     data = GetWebRequestData(
         "https://www.nseindia.com/api/event-calendar")
 
     result += GetDisplayEvents(data)
-    result += "- - - - - - - - - - \n"
+    result += "- - - - - - - -\n"
     return result
 
 
 def sendToTelegram(text):
     urlString = "https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}"
 
+    config = configparser.ConfigParser()
+    config.read('CONFIGURATON.INI')
+
     # Give api token of the bot
-    apiToken = ""  # Give api token of the bot
-    chatId = "-1001280951754"  # Group Id
+    apiToken = config.get('TELEGRAM', 'API_TOKEN')
+    chatId = config.get('TELEGRAM', 'CHAT_ID')
 
     text = text.replace("&", "And")
     for i in range(0, len(text), 3800):
