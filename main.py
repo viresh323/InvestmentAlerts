@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 from datetime import datetime as dt
 from datetime import timedelta
-import urllib
+import os
 import configparser
 
 
@@ -205,7 +205,7 @@ def sendToTelegram(text):
     urlString = "https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}"
 
     config = configparser.ConfigParser()
-    config.read('CONFIGURATON.INI')
+    config.read(os.path.join(os.path.dirname(__file__), 'CONFIGURATON.INI'))
 
     # Give api token of the bot
     apiToken = config.get('TELEGRAM', 'API_TOKEN')
@@ -213,7 +213,8 @@ def sendToTelegram(text):
 
     text = text.replace("&", "And")
     for i in range(0, len(text), 3800):
-        url = urlString.format(apiToken, chatId, text[i:i+3800])
+        url = urlString.format(
+            apiToken, chatId, text[i:i+3800])
         response = requests.get(url)
 
 
