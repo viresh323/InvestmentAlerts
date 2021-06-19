@@ -200,6 +200,77 @@ def GetResults():
     result += "- - - - - - - -\n"
     return result
 
+def GetDisplayAnnouncements(data, isOfs):
+    buyBackResult = " - BuyBack - \n"
+    dividentResult = " - Divident - \n"
+    ofsResult = " - Offer for sale - \n"
+
+    for i in data:
+        if "Dividend" in i["desc"]:
+            dividentResult += ("%s" % (i["symbol"]))
+            dividentResult += (" - %s" % (i["desc"]))
+            dividentResult += (" - %s \n \n" % (i["sort_date"]))
+        if "Buyback" in i["desc"]:
+            buyBackResult += ("%s" % (i["symbol"]))
+            buyBackResult += (" - %s" % (i["desc"]))
+            buyBackResult += (" - %s \n \n" % (i["sort_date"]))
+        if "Offer for sale" in i["desc"]:
+            ofsResult += ("%s" % (i["symbol"]))
+            ofsResult += (" - %s" % (i["desc"]))
+            ofsResult += (" - %s \n \n" % (i["sort_date"]))
+
+    buyBackResult += "----------------\n"
+    dividentResult += "----------------\n"
+    ofsResult += "----------------\n"
+
+    if isOfs == True:
+        return ofsResult
+    return buyBackResult + dividentResult + ofsResult
+
+def GetAnnouncements(isOfs):
+    result = "-Announcements - BuyBack - Divident - \n"
+
+    data = GetWebRequestData(
+        "https://www.nseindia.com/api/corporate-announcements?index=equities")
+
+    result += GetDisplayAnnouncements(data, isOfs)
+    result += "- - - - - - - -\n"
+    return result
+
+def GetDisplayCorporateActions(data):
+    buyBackResult = " - BuyBack - \n"
+    dividentResult = " - Divident - \n"
+    bonusResult = " - Bonus - \n"
+    
+    for i in data:
+        if "Dividend" in i["subject"]:
+            dividentResult += ("%s" % (i["symbol"]))
+            dividentResult += (" - %s" % (i["subject"]))
+            dividentResult += (" - Ex-%s \n \n" % (i["exDate"]))
+        if "Buy Back" in i["subject"]:
+            buyBackResult += ("%s" % (i["symbol"]))
+            buyBackResult += (" - %s" % (i["subject"]))
+            buyBackResult += (" - Ex-%s \n \n" % (i["exDate"]))
+        if "Bonus" in i["subject"]:
+            bonusResult += ("%s" % (i["symbol"]))
+            bonusResult += (" - %s" % (i["subject"]))
+            bonusResult += (" - Ex-%s \n \n" % (i["exDate"]))
+
+    buyBackResult += "----------------\n"
+    dividentResult += "----------------\n"
+    bonusResult += "----------------\n"
+    return buyBackResult + dividentResult + bonusResult
+
+def GetCorporateActions():
+    result = "-Corporate Actions - BuyBack - Divident - Bonus - \n"
+
+    data = GetWebRequestData(
+        "https://www.nseindia.com/api/corporates-corporateActions?index=equities")
+
+    result += GetDisplayCorporateActions(data)
+    result += "- - - - - - - -\n"
+    return result
+
 
 def sendToTelegram(text):
     urlString = "https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}"
@@ -227,9 +298,13 @@ def main():
     upcomingBuyback = GetUpcomingBuyback()
     dividend = GetBoardMeetings()
     earnings = GetResults()
+    announcements = GetAnnouncements(False)
+    corporateActions = GetCorporateActions()
+
+    ofsAnnouncements = GetAnnouncements(True) # call this for OFS announcements
 
     sendToTelegram(currentOfs + upcomingOfs + upcomingIpo +
-                   currentIpo + currentBuyback + upcomingBuyback)
+                    currentIpo + currentBuyback + upcomingBuyback + announcements + corporateActions + ofsAnnouncements)
 
     if dt.today().weekday() == 2:
         sendToTelegram(dividend + earnings)
