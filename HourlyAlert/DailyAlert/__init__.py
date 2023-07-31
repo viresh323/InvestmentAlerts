@@ -219,17 +219,19 @@ def sendToTelegram(text):
 
 
 def main(dailyalert: func.TimerRequest) -> None:
-    currentOfs = (GetCurrenOFS())
-    upcomingOfs = (GetUpcomingOFS())
-    upcomingIpo = GetUpcomingIPOs()
-    currentIpo = GetCurrentIPOs()
-    currentBuyback = GetCurrentBuyback()
-    upcomingBuyback = GetUpcomingBuyback()
-    dividend = GetBoardMeetings()
+    # currentOfs = (GetCurrenOFS())
+    # upcomingOfs = (GetUpcomingOFS())
+    # upcomingIpo = GetUpcomingIPOs()
+    # currentIpo = GetCurrentIPOs()
+    # currentBuyback = GetCurrentBuyback()
+    # upcomingBuyback = GetUpcomingBuyback()
+    # dividend = GetBoardMeetings()
     earnings = GetResults()
 
-    sendToTelegram(currentOfs + upcomingOfs + upcomingIpo +
-                   currentIpo + currentBuyback + upcomingBuyback)
+    # sendToTelegram(currentOfs + upcomingOfs + upcomingIpo +
+    #                currentIpo + currentBuyback + upcomingBuyback)
 
     if dt.today().weekday() == 3:
-        sendToTelegram(dividend + earnings)
+        sendToTelegram(earnings)
+      
+
