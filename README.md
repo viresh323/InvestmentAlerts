@@ -20,5 +20,12 @@ Simple to use, just enter the paths of the dataset and face image.
       ```sh
         pip install requests
        ```
+
+### How to debug locally?
+
+  - Add python debugger and run the application
+  - On left menu - open Azure and sign in
+  - Under Workspace in Azure - go to functions and press "Execute now"
+  
 ## Acknowledgements
 * [How to create Telegram Bots](https://docs.microsoft.com/en-us/azure/bot-service/bot-service-channel-connect-telegram?view=azure-bot-service-4.0)
